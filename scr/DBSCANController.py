@@ -12,8 +12,8 @@ import matplotlib.pyplot as plt
 import time
 from sklearn.cluster import DBSCAN
 import json
-from DBSCANAlgorithm import DBSCAN
-from  DataPointGenerator import DataPointGenerator
+from DBSCANAlgorithm import DBSCANAlgorithm
+from DataPointGenerator import DataPointGenerator
 from DBSCANVisualizer import DBSCANVisualizer
 
 class DBSCANController:
@@ -39,7 +39,8 @@ class DBSCANController:
         # Return:
         - none
         """
-        self.dbscan = DBSCAN()
+        self.dbscan = DBSCANAlgorithm()
+        self.visualizer = DBSCANVisualizer()
 
     def run_DBSCAN(self, p_np_cluster_points, p_eps, p_min_samples):
         """"
@@ -61,7 +62,7 @@ class DBSCANController:
         # ---------------------------------------------------------------------------------
         # Run DBSCAN
         start_time = time.time()
-        np_cluster = self.dbscan(p_np_cluster_points, p_eps, p_min_samples)
+        np_cluster = self.dbscan.dbscan(p_np_cluster_points, p_eps, p_min_samples)
         end_time = time.time()
         # calculate elapsed time to run DBSCAN
         elapsed_time = end_time - start_time
@@ -98,7 +99,7 @@ class DBSCANController:
         # Convert DataFrame to numpy array
         np_cluster_points = df_cluster_points[['x', 'y']].values
         # run DBSCAN
-        np_cluster = self.run_DBSCAN(self, np_cluster_points, p_eps, p_min_samples)        
+        np_cluster = self.run_DBSCAN(np_cluster_points, p_eps, p_min_samples)        
         # create json object
         # add cluster id to data frame with xy coordinates
         df_cluster_points['cluster'] = np_cluster.tolist()
@@ -106,7 +107,7 @@ class DBSCANController:
         json_str = df_cluster_points.to_json(orient='records', lines=True)
         return json_str
 
-    def DBSCAN_data_generation(self, p_eps, p_min_samples, p_num_clusters, p_num_points):
+    def DBSCAN_data_generation(self, p_eps, p_min_samples, p_num_clusters, p_num_points, p_num_noise):
         """"
             ## This function will run the DBSCAN algorithm using self generated data points
 
@@ -128,11 +129,11 @@ class DBSCANController:
         # ----------------------------------------------------------------------------------
         print("This is DBSCAN using self generated xy-data points!")
         data_generator = DataPointGenerator()
-        df_cluster_points = data_generator.generate_clusters(p_num_clusters, p_num_points)
+        df_cluster_points = data_generator.generate_clusters_noise(p_num_clusters, p_num_points, p_num_noise)
         # Convert DataFrame to numpy array
         np_cluster_points = df_cluster_points[['x', 'y']].values
         # run DBSCAN
-        np_cluster = self.run_DBSCAN(self, np_cluster_points, p_eps, p_min_samples)        
+        np_cluster = self.run_DBSCAN(np_cluster_points, p_eps, p_min_samples)        
         # create json object
         # add cluster id to data frame with xy coordinates
         df_cluster_points['cluster'] = np_cluster.tolist()
@@ -140,43 +141,102 @@ class DBSCANController:
         json_str = df_cluster_points.to_json(orient='records', lines=True)
         return json_str
 
+    def DBSCAN_scikit_from_file(self, p_filename, p_eps, p_min_samples):
+        """"
+            ## This function will run the DBSCAN algorithm using self generated data points
 
-    # ---------------------------------------------------------------------------------
-    # - run DBSCAN algorithm from SciLearn library
-    # ---------------------------------------------------------------------------------
-    # get start time for running scikit-learn DBSCAN
-    start_time = time.time()
-    # run DBSCAN from scikit-learn
-    db = DBSCAN(eps=eps, min_samples=min_samples).fit(data)
-    # stopp time measurement
-    end_time = time.time()
-    # calculate elapsed time for DBSCAN sci-kit
-    sci_elapsed_time = end_time - start_time
+            This function will first generate data points usinge the class DataPointGenerator,
+            and than run the DBSCAN algorithm based on the data points
 
-    # extract clusters
-    sci_cluster = db.labels_
-    print(type(sci_cluster))
-    # calculate the number of cluster without noise
-    # substract one in case value in cluster is a noise point, other
-    # substract 0
-    sci_num_clusters = len(set(cluster)) - (1 if -1 in cluster else 0)
-    print(f"Number of clusters scikit-learn algorithm = {sci_num_clusters}")
-    print(f"Time elapsed for DBSCAN scikit-learn algorithm = {sci_elapsed_time:.4f} seconds!")
+            # Parameter(s):
+            - 'p_filename' (str): the filename for the csv file with xy-coordinates
+            - 'p_min_samples': minimum number of samples required to from a cluster
+            - 'p_eps': maximum distance for neighbor points
 
+            # Return:
+            - json object : data frame containing numeric values of xy coordinates
+                            and the assigned cluster id for each data point.
+        """
+        # ---------------------------------------------------------------------------------
+        # - run DBSCAN algorithm from SciLearn library
+        # ---------------------------------------------------------------------------------
+        print("This is DBSCAN SciKit using using a .csv file with xy-data points!")
+        # read csv file and store it in a data frame
+        df_cluster_points = pd.read_csv(p_filename)
+        # Convert DataFrame to numpy array
+        np_cluster_points = df_cluster_points[['x', 'y']].values
+        start_time = time.time()
+        # run DBSCAN from scikit-learn
+        db = DBSCAN(eps=p_eps, min_samples=p_min_samples).fit(np_cluster_points)
+        # stopp time measurement
+        end_time = time.time()
+        # calculate elapsed time for DBSCAN sci-kit
+        sci_elapsed_time = end_time - start_time
 
-    # ---------------------------------------------------------------------------------
-    # - run animation
-    # ---------------------------------------------------------------------------------
-    #show_animation(xy, cluster, sci_cluster, num_clusters, elapsed_time, sci_elapsed_time, sci_num_clusters)
+        # extract clusters
+        sci_cluster = db.labels_
+        # calculate the number of cluster without noise
+        # substract one in case value in cluster is a noise point, other
+        # substract 0
+        sci_num_clusters = len(set(sci_cluster)) - (1 if -1 in sci_cluster else 0)
+        print(f"Number of clusters scikit-learn algorithm = {sci_num_clusters}")
+        print(f"Time elapsed for DBSCAN scikit-learn algorithm = {sci_elapsed_time:.4f} seconds!")
+        df_cluster_points['cluster'] = sci_cluster.tolist()
+        # create a json object
+        json_str = df_cluster_points.to_json(orient='records', lines=True)
+        return json_str
 
+    def run_single_animation(self, p_json_data):
+        """"
+            ## This function will run an animation with a single data set
 
-    # ---------------------------------------------------------------------------------
-    # - create a json file
-    # ---------------------------------------------------------------------------------
-    cluster_custom = cluster.tolist()
-    j_cluster_str = json.dumps(cluster_custom)
-    #print(j_cluster_str)
-    xy['cluster'] = cluster.tolist()
-    df_str = xy.to_json(orient='records', lines=True)
-    #with open('xy.json', 'w') as json_file:
-    #    json_file.write(df_str)
+            This function will dispolay the result of the dbscan algorithm
+
+            # Parameter(s):
+            - 'p_json_data' (json object): a json object containing the xy and cluster id
+
+            # Return:
+            - none
+        """
+        # convert json data to a dictonary
+        # extract line by line
+        json_lines = p_json_data.splitlines()  
+        json_object = [json.loads(line) for line in json_lines]
+
+        # NumPy-Array for x and y
+        data_array = np.array([[item["x"], item["y"]] for item in json_object])
+
+        # NumPy-Array for cluster
+        cluster_array = np.array([item["cluster"] for item in json_object])
+        
+        self.visualizer.show_single_animation(data_array, cluster_array)
+
+    def run_comparison_animation(self, p_json_data_1, p_json_data_2):
+        """"
+            ## This function will run an animation with two data sets
+
+            This function will dispolay the result of the dbscan algorithm with two data sets
+
+            # Parameter(s):
+            - 'p_json_data_1' (json object): a json object containing the xy and cluster id Data set 1
+            - 'p_json_data_2' (json object): a json object containing the xy and cluster id Data set 2
+
+            # Return:
+            - none
+        """
+        # convert json data to a dictonary
+        # extract line by line
+        json_lines = p_json_data_1.splitlines()  
+        json_object = [json.loads(line) for line in json_lines]
+
+        # NumPy-Array for x and y for data set 1
+        data_array_1 = np.array([[item["x"], item["y"]] for item in json_object])
+        # NumPy-Array for cluster for data set 1
+        cluster_array_1 = np.array([item["cluster"] for item in json_object])
+
+        # NumPy-Array for x and y for data set 2
+        data_array_2 = np.array([[item["x"], item["y"]] for item in json_object])
+        # NumPy-Array for cluster for data set 2
+        cluster_array_2 = np.array([item["cluster"] for item in json_object])
+        
+        self.visualizer.show_comparison(data_array_1, cluster_array_1, data_array_2, cluster_array_2)

@@ -8,11 +8,9 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import time
-from sklearn.cluster import DBSCAN
 import json
 
-class DBSCAN:
+class DBSCANAlgorithm:
     """"
         # Implementation of the DBSCAN Algorithm
 
@@ -22,7 +20,7 @@ class DBSCAN:
         - none
 
         ## Method(s):
-        - 'plot_sales()': returns a data frame of a timeline of sales per month
+        - 
        
 
         ## Dependencies:

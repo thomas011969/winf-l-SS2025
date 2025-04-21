@@ -34,9 +34,15 @@ filename = './csv/data_points.csv'
 """
 eps = 0.5
 min_samples = 5
-num_clusters = 5
-num_points = 20
+num_clusters = 3
+num_noise = 20
+num_points = 100
 
 controller = DBSCANController()
-json_file = controller.run_DBSCAN_from_file(filename, eps, min_samples)
-print(json_file)
+json_data_1 = controller.DBSCAN_from_file(filename, eps, min_samples)
+json_data_2 = controller.DBSCAN_scikit_from_file(filename, eps, min_samples)
+controller.run_comparison_animation(json_data_1, json_data_2)
+#controller.run_single_animation(json_data)
+#json_data = controller.DBSCAN_data_generation(eps, min_samples, num_clusters, num_points, num_noise)
+#controller.run_single_animation(json_data)
+#print(json_data)
