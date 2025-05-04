@@ -2,7 +2,7 @@
 # Title				: Wirtschaftsinformatik Labor
 # Author 			: Thomas Schmidt
 # Contact 			: thomas.schmidt.2@stud.hs-emden-leer.de
-# Date				: 18.04.2025
+# Date				: 04.05.2025
 # Version			: 1.0
 #==============================================================================
 
@@ -55,7 +55,6 @@ class DBSCANJsonReader:
         # save json file
         with open("data_1.json", "w", encoding="utf-8") as json_file:
             json.dump(combined_data, json_file)
-
         return combined_data
 
     def getEPS(self):

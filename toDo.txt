@@ -1,0 +1,8 @@
+# To Do:
+- einlesen der bank.csv Datei
+- extrahieren der relevatnen Spalten (vorgegeben durch .json-Datei)
+- manuelles Mapping von qualitativen Daten auf nummerische Daten
+- hinzufügen dieses Mapping in ein Data-Frame
+- Durchführen des clustering anhand der ge-mappedent Daten duch DBSCAN
+- Ausgabe des Clusterings
+- zu klären: Rückgabewerte mit Mapping? Sollen auch Performance Data zurückgegeben werden?
