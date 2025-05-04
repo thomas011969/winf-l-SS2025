@@ -11,12 +11,13 @@ from DBSCANController import DBSCANController
 #from flask import Flask, request, jsonify
 #from flask_cors import CORS
 
-# standard filename for this application
-# Data source loaded from: https://archive.ics.uci.edu/dataset/352/online+retail
-# Citation: Chen, D. (2015). Online Retail [Dataset]. UCI Machine Learning Repository. https://doi.org/10.24432/C5BW33.
-# The original .xlsx file was for the purpose of this programm converted to a .csv file using Excel.
+# Filename: bank-additional-full.csv
+# Source Moro, S., Rita, P., & Cortez, P. (2014). Bank Marketing [Dataset]. UCI Machine Learning Repository. https://doi.org/10.24432/C5K306
+# Download link: https://archive.ics.uci.edu/ml/datasets/Bank+Marketing
+# alternative download link: https://www.kaggle.com/datasets/henriqueyamahata/bank-marketing/data
 csvFilename = './csv/data_points.csv'
 jsonFilename = './csv/data_1.json'
+filename = './csv/bank-additional-full.csv'
 
 """"
     # Main function
@@ -54,7 +55,7 @@ controller = DBSCANController(jsonFilename)
 #CORS(app)  # Aktiviert CORS f�r alle Routen
 #@app.route('/dbscan', methods=['POST'])
 json_data_1 = controller.DBSCAN_from_file()
-#print(json_data_1)
+print(json_data_1)
 json_data_2 = controller.DBSCAN_scikit_from_file()
 controller.run_comparison_animation(json_data_1, json_data_2)
 #controller.run_single_animation(json_data_1)
