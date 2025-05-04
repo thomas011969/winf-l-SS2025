@@ -15,6 +15,7 @@ import json
 from DBSCANAlgorithm import DBSCANAlgorithm
 from DataPointGenerator import DataPointGenerator
 from DBSCANVisualizer import DBSCANVisualizer
+from DBSCANJsonReader import DBSCANJsonReader
 
 class DBSCANController:
     # ---------------------------------------------------------------------------------
@@ -27,7 +28,7 @@ class DBSCANController:
     num_clusters = 5
     num_points = 20
 
-    def __init__(self):
+    def __init__(self, p_filename):
         """
         ## Constuctor of the DBSCANController class
 
@@ -41,6 +42,7 @@ class DBSCANController:
         """
         self.dbscan = DBSCANAlgorithm()
         self.visualizer = DBSCANVisualizer()
+        self.jreader = DBSCANJsonReader(p_filename)
 
     def run_DBSCAN(self, p_np_cluster_points, p_eps, p_min_samples):
         """"
@@ -74,7 +76,7 @@ class DBSCANController:
         print(f"Time elapsed for DBSCAN custom algorithm = {elapsed_time:.4f} seconds!")
         return np_cluster
         
-    def DBSCAN_from_file(self, p_filename, p_eps, p_min_samples):
+    def DBSCAN_from_file(self):
         """"
             ## This function will run the DBSCAN algorithm using self generated data points
 
@@ -95,11 +97,16 @@ class DBSCANController:
         # ----------------------------------------------------------------------------------
         print("This is DBSCAN using using a .csv file with xy-data points!")
         # read csv file and store it in a data frame
-        df_cluster_points = pd.read_csv(p_filename)
+        #df_cluster_points = pd.read_csv(p_filename)
+        df_cluster_points = self.jreader.getData()
+        eps = self.jreader.getEPS()
+        min_samples = self.jreader.getMinSamples()
+        headers = self.jreader.getHeaders()
         # Convert DataFrame to numpy array
-        np_cluster_points = df_cluster_points[['x', 'y']].values
+        #np_cluster_points = df_cluster_points[['x', 'y']].values
+        np_cluster_points = df_cluster_points[[headers[0], headers[1]]].values
         # run DBSCAN
-        np_cluster = self.run_DBSCAN(np_cluster_points, p_eps, p_min_samples)        
+        np_cluster = self.run_DBSCAN(np_cluster_points, eps, min_samples)        
         # create json object
         # add cluster id to data frame with xy coordinates
         df_cluster_points['cluster'] = np_cluster.tolist()
@@ -141,7 +148,7 @@ class DBSCANController:
         json_str = df_cluster_points.to_json(orient='records', lines=True)
         return json_str
 
-    def DBSCAN_scikit_from_file(self, p_filename, p_eps, p_min_samples):
+    def DBSCAN_scikit_from_file(self):
         """"
             ## This function will run the DBSCAN algorithm using self generated data points
 
@@ -162,9 +169,19 @@ class DBSCANController:
         # ---------------------------------------------------------------------------------
         print("This is DBSCAN SciKit using using a .csv file with xy-data points!")
         # read csv file and store it in a data frame
-        df_cluster_points = pd.read_csv(p_filename)
+        #df_cluster_points = pd.read_csv(p_filename)
         # Convert DataFrame to numpy array
-        np_cluster_points = df_cluster_points[['x', 'y']].values
+
+        df_cluster_points = self.jreader.getData()
+        p_eps = self.jreader.getEPS()
+        p_min_samples = self.jreader.getMinSamples()
+        headers = self.jreader.getHeaders()
+        # Convert DataFrame to numpy array
+        #np_cluster_points = df_cluster_points[['x', 'y']].values
+        np_cluster_points = df_cluster_points[[headers[0], headers[1]]].values
+
+
+        #np_cluster_points = df_cluster_points[['x', 'y']].values
         start_time = time.time()
         # run DBSCAN from scikit-learn
         db = DBSCAN(eps=p_eps, min_samples=p_min_samples).fit(np_cluster_points)
@@ -204,12 +221,17 @@ class DBSCANController:
         json_object = [json.loads(line) for line in json_lines]
 
         # NumPy-Array for x and y
-        data_array = np.array([[item["x"], item["y"]] for item in json_object])
+        keys = list(json_object[0].keys())
+        x_key, y_key = keys[0], keys[1]
+       
+        # Create the NumPy array using the dynamic keys
+        data_array = np.array([[item[x_key], item[y_key]] for item in json_object])
+        #data_array = np.array([[item["x"], item["y"]] for item in json_object])
 
         # NumPy-Array for cluster
         cluster_array = np.array([item["cluster"] for item in json_object])
         
-        self.visualizer.show_single_animation(data_array, cluster_array)
+        self.visualizer.show_single_animation(data_array, cluster_array, keys)
 
     def run_comparison_animation(self, p_json_data_1, p_json_data_2):
         """"
@@ -226,17 +248,33 @@ class DBSCANController:
         """
         # convert json data to a dictonary
         # extract line by line
-        json_lines = p_json_data_1.splitlines()  
-        json_object = [json.loads(line) for line in json_lines]
+        json_lines1 = p_json_data_1.splitlines()  
+        json_object1 = [json.loads(line) for line in json_lines1]
 
         # NumPy-Array for x and y for data set 1
-        data_array_1 = np.array([[item["x"], item["y"]] for item in json_object])
+        # NumPy-Array for x and y
+        keys1 = list(json_object1[0].keys())
+        x_key1, y_key1 = keys1[0], keys1[1]
+        # Create the NumPy array using the dynamic keys
+        data_array_1 = np.array([[item[x_key1], item[y_key1]] for item in json_object1])
+        #data_array_1 = np.array([[item["x"], item["y"]] for item in json_object])
         # NumPy-Array for cluster for data set 1
-        cluster_array_1 = np.array([item["cluster"] for item in json_object])
+        cluster_array_1 = np.array([item["cluster"] for item in json_object1])
 
         # NumPy-Array for x and y for data set 2
-        data_array_2 = np.array([[item["x"], item["y"]] for item in json_object])
-        # NumPy-Array for cluster for data set 2
-        cluster_array_2 = np.array([item["cluster"] for item in json_object])
+        # convert json data to a dictonary
+        # extract line by line
+        json_lines2 = p_json_data_1.splitlines()  
+        json_object2 = [json.loads(line) for line in json_lines2]
+
+        # NumPy-Array for x and y for data set 1
+        # NumPy-Array for x and y
+        keys2 = list(json_object1[0].keys())
+        x_key2, y_key2 = keys2[0], keys2[1]
+        # Create the NumPy array using the dynamic keys
+        data_array_2 = np.array([[item[x_key2], item[y_key2]] for item in json_object2])
+        #data_array_2 = np.array([[item["x"], item["y"]] for item in json_object])
+        # NumPy-Array for cluster for data set 1
+        cluster_array_2 = np.array([item["cluster"] for item in json_object2])
         
-        self.visualizer.show_comparison(data_array_1, cluster_array_1, data_array_2, cluster_array_2)
+        self.visualizer.show_comparison(data_array_1, cluster_array_1, data_array_2, cluster_array_2, keys1, keys2)

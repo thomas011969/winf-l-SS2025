@@ -70,6 +70,20 @@ class DBSCANAlgorithm:
                 neighbors.append(i)
         return neighbors
 
+    def convert_json_to_numpy(self, json_data):
+        """
+            ## Function to convert json data to numpy array
+            This function takes a json data and converts it to a numpy array.
+            # Parameter(s):
+            - 'json_data' (json): json data to be converted
+            # Return:
+            - 'data' (numpy array): numpy array with all data points
+        """
+        # convert json data to pandas dataframe
+        #df = pd.DataFrame(json_data)
+        # convert pandas dataframe to numpy array
+        #data = df.to_numpy()
+        
 
     def dbscan(self, data, eps, min_samples):
         """
@@ -78,7 +92,7 @@ class DBSCANAlgorithm:
             This function runs the DBSCAN algorithm.
 
             # Parameter(s):
-            - 'data' (numpy array): a numpy array with all data points to be evaluated
+            - 'data' (json string): a numpy array with all data points to be evaluated
             - 'min_samples': minimum number of samples required to from a cluster
             - 'eps': maximum distance for neighbor points
 

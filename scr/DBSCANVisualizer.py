@@ -126,7 +126,7 @@ class DBSCANVisualizer:
             plt.pause(.5)
         plt.show()
 
-    def show_single_animation(self, p_data, p_cluster):
+    def show_single_animation(self, p_data, p_cluster, p_keys):
         """
         ## This function will animate the result out of the DBSCAN
 
@@ -135,6 +135,7 @@ class DBSCANVisualizer:
         # Parameter(s):
         - p_data (numpy array): Data points as a dictionary with 'x' and 'y' keys
         - p_cluster (numpy array): Cluster cluster for the data points
+        - p_keys (list): keys for the data points
 
         # Return:
         - none
@@ -145,13 +146,17 @@ class DBSCANVisualizer:
         # create plot for original data
         ax1.plot(p_data[:, 0], p_data[:, 1], 'k+', markersize=10)  # Accessing x and y from columns 0 and 1
         ax1.set_title("Original Data")
+        ax1.set_xlabel(p_keys[0])
+        ax1.set_ylabel(p_keys[1])
     
         # create plot for clustered data (example)
         ax2.scatter(p_data[:, 0], p_data[:, 1], c=p_cluster, cmap='viridis')
         ax2.set_title("Clustered Data")
+        ax2.set_xlabel(p_keys[0])
+        ax2.set_ylabel(p_keys[1])
         plt.show()
 
-    def show_comparison(self, p_data_1, p_cluster_1, p_data_2, p_cluster_2):
+    def show_comparison(self, p_data_1, p_cluster_1, p_data_2, p_cluster_2, p_keys1, p_keys2):
         """
         ## This function will animate the result out of the DBSCAN
 
@@ -160,6 +165,8 @@ class DBSCANVisualizer:
         # Parameter(s):
         - p_data (numpy array): Data points as a dictionary with 'x' and 'y' keys
         - p_cluster (numpy array): Cluster cluster for the data points
+        - p_keys1 (list): keys for the data points for first cluster
+        - p_keys2 (list): keys for the data points for second cluster
 
         # Return:
         - none
@@ -170,12 +177,18 @@ class DBSCANVisualizer:
         # create plot for original data
         ax1.plot(p_data_1[:, 0], p_data_1[:, 1], 'k+', markersize=10)  # Accessing x and y from columns 0 and 1
         ax1.set_title("Original Data")
-    
+        ax1.set_xlabel(p_keys1[0])
+        ax1.set_ylabel(p_keys1[1])
+
         # create plot for clustered data set 1
         ax2.scatter(p_data_1[:, 0], p_data_1[:, 1], c=p_cluster_1, cmap='viridis')
         ax2.set_title("Data Set 1")
+        ax2.set_xlabel(p_keys1[0])
+        ax2.set_ylabel(p_keys1[1])
 
         # create plot for clustered data set 2
         ax3.scatter(p_data_2[:, 0], p_data_2[:, 1], c=p_cluster_2, cmap='viridis')
         ax3.set_title("Data Set 2")
+        ax3.set_xlabel(p_keys2[0])
+        ax3.set_ylabel(p_keys2[1])
         plt.show()
