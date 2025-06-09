@@ -21,14 +21,11 @@ class DBSCANController:
     # ---------------------------------------------------------------------------------
     # - Set parameters for DBSCAN and data generation
     # ---------------------------------------------------------------------------------
-    # Data for DBSCAN algorithm
-    eps = 0.5
-    min_samples = 5
     # Parameters for data generation
     num_clusters = 5
     num_points = 20
 
-    def __init__(self, p_filename):
+    def __init__(self, p_filenameFlask, p_filenameData, p_filenameMapping):
         """
         ## Constuctor of the DBSCANController class
 
@@ -42,7 +39,7 @@ class DBSCANController:
         """
         self.dbscan = DBSCANAlgorithm()
         self.visualizer = DBSCANVisualizer()
-        self.jreader = DBSCANJsonReader(p_filename)
+        self.jreader = DBSCANJsonReader(p_filenameFlask, p_filenameData, p_filenameMapping)
 
     def run_DBSCAN(self, p_np_cluster_points, p_eps, p_min_samples):
         """"
@@ -95,23 +92,31 @@ class DBSCANController:
         ## ---------------------------------------------------------------------------------
         # - generate data to run DBSCAN
         # ----------------------------------------------------------------------------------
-        print("This is DBSCAN using using a .csv file with xy-data points!")
-        # read csv file and store it in a data frame
-        #df_cluster_points = pd.read_csv(p_filename)
-        df_cluster_points = self.jreader.getData()
+        print("This is self implemented DBSCAN using using a .json file!")
+        # get parametes for DBSCAN algorith
         eps = self.jreader.getEPS()
         min_samples = self.jreader.getMinSamples()
-        headers = self.jreader.getHeaders()
+        # get the catagories to be analyzed
+        categories = self.jreader.getListCategories()
+        # get the data from the categories
+        df_cluster_points = self.jreader.getData(categories)
+        
+        # Convert DataFrame to numpy array
+        np_cluster_points = df_cluster_points.values
         # Convert DataFrame to numpy array
         #np_cluster_points = df_cluster_points[['x', 'y']].values
-        np_cluster_points = df_cluster_points[[headers[0], headers[1]]].values
+        #np_cluster_points = df_cluster_points[[headers[0], headers[1]]].values
+        
         # run DBSCAN
         np_cluster = self.run_DBSCAN(np_cluster_points, eps, min_samples)        
         # create json object
         # add cluster id to data frame with xy coordinates
         df_cluster_points['cluster'] = np_cluster.tolist()
         # create a json object
+        
         json_str = df_cluster_points.to_json(orient='records', lines=True)
+        json_str = self.jreader.decodeCategories(json_str)
+        #print(json_str)
         return json_str
 
     def DBSCAN_data_generation(self, p_eps, p_min_samples, p_num_clusters, p_num_points, p_num_noise):
@@ -134,7 +139,7 @@ class DBSCANController:
         ## ---------------------------------------------------------------------------------
         # - generate data to run DBSCAN
         # ----------------------------------------------------------------------------------
-        print("This is DBSCAN using self generated xy-data points!")
+        print("This is self implemented DBSCAN self generated data!")
         data_generator = DataPointGenerator()
         df_cluster_points = data_generator.generate_clusters_noise(p_num_clusters, p_num_points, p_num_noise)
         # Convert DataFrame to numpy array
@@ -167,19 +172,21 @@ class DBSCANController:
         # ---------------------------------------------------------------------------------
         # - run DBSCAN algorithm from SciLearn library
         # ---------------------------------------------------------------------------------
-        print("This is DBSCAN SciKit using using a .csv file with xy-data points!")
-        # read csv file and store it in a data frame
-        #df_cluster_points = pd.read_csv(p_filename)
-        # Convert DataFrame to numpy array
-
-        df_cluster_points = self.jreader.getData()
+        print("This is DBSCAN SciKit using using a json file!")
+        # get parametes for DBSCAN algorith
         p_eps = self.jreader.getEPS()
         p_min_samples = self.jreader.getMinSamples()
-        headers = self.jreader.getHeaders()
+        # get the catagories to be analyzed
+        categories = self.jreader.getListCategories()
+        # get the data from the categories
+        df_cluster_points = self.jreader.getData(categories)
+        
+
+
         # Convert DataFrame to numpy array
         #np_cluster_points = df_cluster_points[['x', 'y']].values
-        np_cluster_points = df_cluster_points[[headers[0], headers[1]]].values
-
+        #np_cluster_points = df_cluster_points[[categories[0], categories[1]]].values
+        np_cluster_points = df_cluster_points.values
 
         #np_cluster_points = df_cluster_points[['x', 'y']].values
         start_time = time.time()
@@ -201,6 +208,7 @@ class DBSCANController:
         df_cluster_points['cluster'] = sci_cluster.tolist()
         # create a json object
         json_str = df_cluster_points.to_json(orient='records', lines=True)
+        json_str = self.jreader.decodeCategories(json_str)
         return json_str
 
     def run_single_animation(self, p_json_data):
@@ -217,9 +225,10 @@ class DBSCANController:
         """
         # convert json data to a dictonary
         # extract line by line
-        json_lines = p_json_data.splitlines()  
-        json_object = [json.loads(line) for line in json_lines]
-
+        #print(p_json_data)
+        #json_lines = p_json_data.splitlines()  
+        #json_object = [json.loads(line) for line in json_lines]
+        json_object = p_json_data
         # NumPy-Array for x and y
         keys = list(json_object[0].keys())
         x_key, y_key = keys[0], keys[1]

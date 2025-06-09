@@ -7,8 +7,10 @@
 #==============================================================================
 
 # Import libaries
+import json
 import numpy as np
 import pandas as pd
+import json
 import matplotlib.pyplot as plt
 
 
@@ -44,6 +46,12 @@ class DBSCANVisualizer:
             # Return:
             - none
         """
+        # open mapping file and store information in a dataframe
+       
+        self.categorical_columns = [
+            "job", "marital", "education", "default",
+            "housing", "loan", "contact", "month", "day_of_week"
+        ]
 
     def show_animation(xy, cluster, sci_cluster, num_clusters, elapsed_time, sci_elapsed_time, sci_num_clusters):
         """
@@ -155,6 +163,10 @@ class DBSCANVisualizer:
         ax2.set_xlabel(p_keys[0])
         ax2.set_ylabel(p_keys[1])
         plt.show()
+
+    def decodeCategories(self, p_keys):
+         pass
+
 
     def show_comparison(self, p_data_1, p_cluster_1, p_data_2, p_cluster_2, p_keys1, p_keys2):
         """

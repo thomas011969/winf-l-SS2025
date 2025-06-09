@@ -1,4 +1,4 @@
-#==============================================================================
+﻿#==============================================================================
 # Title				: Wirtschaftsinformatik Labor
 # Author 			: Thomas Schmidt
 # Contact 			: thomas.schmidt.2@stud.hs-emden-leer.de
@@ -7,6 +7,7 @@
 #==============================================================================
 
 # Import libaries
+from re import I
 import pandas as pd
 import json
 
@@ -23,39 +24,35 @@ class DBSCANJsonReader:
         - pandas
 
     """
-    def __init__(self, p_filename):
+    def __init__(self, p_filenameFlask, p_filenameData, p_filenameMapping):
         """""
-        ## Constuctor of DBSCANVisualizer class
-        The constuctor takes on the root handler for the graphical user interface
-        in order to display an error message box in case of an error in handling
-        the csv file.
+        ## Constuctor of DBSCANJsonReader class
+        The constuctor takes as a parameter a filename and reads the data and parameters
         # Parameter(s):
-        - 'p_filename' (str): filename
+        - 'p_filenameData' (str): filename of data file in json format
+        - 'p_filename' (str): filename of json file handed over by flask
         # Return:
         - none
         """
-        self.data = self.readData(p_filename)
-        self.parameters = self.readParameters(p_filename)
-
-    def convertCSVtoJson(self, filename):
-        # read csv file
-        df = pd.read_csv(filename)
-        # convert data frame to json
-        json_data = df.to_json(orient="records")
-        parameters = {
-            "algorithm": "DBSCAN",
-            "eps": 0.5,
-            "min_samples": 5 
-            }
-        combined_data = {
-            "parameters": parameters,
-            "data":json_data 
-            }
-        print(combined_data)
-        # save json file
-        with open("data_1.json", "w", encoding="utf-8") as json_file:
-            json.dump(combined_data, json_file)
-        return combined_data
+        # open data file an store data in a dataframe
+        self.data = pd.read_json(p_filenameData)
+        # open mapping file and store information in a dataframe
+        with open(p_filenameMapping, "r") as file:
+            self.mapping = json.load(file)
+        # open flask file and extract data
+        with open(p_filenameFlask, "r") as file:
+            data = json.load(file)
+        # store information from flask file in lists
+        self.parameters = list(data.get("parameters", {}).values())
+        self.categories = list(data.get("categories", {}).values())
+        self.categorical_columns = [
+            "job", "marital", "education", "default",
+            "housing", "loan", "contact", "month", "day_of_week"
+        ]
+        self.categorical_enc_columns = [
+            "job_encoded", "marital_encoded", "education_encoded", "default_encoded",
+            "housing_encoded", "loan_encoded", "contact_encoded", "month_encoded", "day_of_week_encoded"
+        ]
 
     def getEPS(self):
         """" 
@@ -66,7 +63,7 @@ class DBSCANJsonReader:
             # Return:
             - eps (float) : eps parameter from the json file
         """
-        return self.parameters["eps"]
+        return self.parameters[1]
 
     def getMinSamples(self):
         """" 
@@ -77,30 +74,69 @@ class DBSCANJsonReader:
             # Return:
             - min_samples (int) : minimum samples per cluster
         """
-        return self.parameters["min_samples"]
-
-    def getData(self):
+        return self.parameters[2]
+    
+    def decodeCategories(self, p_jsonStr):
         """" 
-            ## This function will return the data section from the json file
+            ## This function will return the decoded json string
              
-            This function returns the data section of the json file
+            This function will return the decoded json string
              
             # Return:
-            - df (pandas data frame) : data frame containing the data to be analyzed
+            - json string : decoded json string
         """
-        return self.data
 
-    def getHeaders(self):
+        # revers mapping
+        inverse_mapping = {
+            category + "_encoded": {v: k for k, v in values.items()}
+            for category, values in self.mapping.items()
+        }
+        # decode line by line
+        rows = [json.loads(line) for line in p_jsonStr.splitlines() if line.strip()]
+        
+        # array for decoded data
+        decoded_data = []
+
+        for row in rows:
+            decoded_row = {}
+            for key, value in row.items():
+                if key in inverse_mapping:  # Falls Schlüssel im Mapping existiert
+                    decoded_row[key.replace("_encoded", "")] = inverse_mapping[key].get(value, value)
+                else:
+                    decoded_row[key] = value  # Falls kein Mapping existiert, unverändert lassen
+            decoded_data.append(decoded_row)
+        # save decoded data
+        #with open("daten_decoded.json", "w") as file:
+        #    json.dump(decoded_data, file, indent=4)
+        return decoded_data
+
+    def getData(self, p_categories):
         """" 
-            ## This function will return the headers of the data section from the json file
+            ## This function will return the date from the bank data json file
              
-            This function returns the header information from data section of the json file
+            This function returns the data section of the bank data json file
+
+            # Parameter(s):
+            - p_categories (list) : a list of names of headers
+             
+            # Return:
+            - df (pandas data frame) : data frame containing data to be analyzed
+        """
+        # Select only the columns specified in p_categories
+        encoded_columns = [col + "_encoded" if col in self.categorical_columns else col for col in p_categories]
+        data = self.data[encoded_columns]  
+        return data
+
+    def getListCategories(self):
+        """" 
+            ## This function will return the categories  from the json file as a list
+             
+            This function returns the categorie information from categories section of the json file
              
             # Return:
             - headers (list) : a list of names of headers
         """
-        headers = self.data.columns.tolist()  # Convert to a list
-        return headers
+        return self.categories
 
 
     def readParameters(self, p_filename):
@@ -121,27 +157,6 @@ class DBSCANJsonReader:
         parameters_dict = json_data.get("parameters", {})
         return parameters_dict
 
-    def readData(self, p_filename):
-        """"
-            ## This function will read in the data section from the json file
-
-            This function takes a filename as a parameter and returns the data section of
-            the file
-
-            # Parameter(s):
-            - 'p_filename' (str): the filename for the csv file with xy-coordinates
-
-            # Return:
-            - df (pandas data frame) : data frame containing the data to be analyzed
-        """
-        with open(p_filename, "r", encoding="utf-8") as json_file:
-            json_data = json.load(json_file)
-        # serialize json string in order to make it fit to a data frame
-        if isinstance(json_data["data"], str):
-            json_data["data"] = json.loads(json_data["data"])
-        # convert json data to pandas DataFrame
-        df = pd.DataFrame(json_data["data"])
-        return df
  
    
 

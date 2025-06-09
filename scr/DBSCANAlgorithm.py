@@ -92,7 +92,7 @@ class DBSCANAlgorithm:
             This function runs the DBSCAN algorithm.
 
             # Parameter(s):
-            - 'data' (json string): a numpy array with all data points to be evaluated
+            - 'data' (numpy array): a numpy array with all data points to be evaluated
             - 'min_samples': minimum number of samples required to from a cluster
             - 'eps': maximum distance for neighbor points
 
@@ -102,6 +102,10 @@ class DBSCANAlgorithm:
         # create an numpy array by the name of label with the equal length of the data frame data
         # and fill the array with -1
         cluster = np.full(len(data), -1)
+        print(eps)
+        print(min_samples)
+        print(len(data))
+
         # first cluster id equals zero
         cluster_id = 0
         # visit every data point
@@ -156,6 +160,7 @@ class DBSCANAlgorithm:
                 if len(new_neighbors) >= min_samples:
                     neighbors += new_neighbors
             i += 1
+        print("done!")
 
 
 
